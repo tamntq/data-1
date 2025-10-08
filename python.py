@@ -1,3 +1,5 @@
+Python
+
 import streamlit as st
 import pandas as pd
 from google import genai
@@ -165,8 +167,8 @@ if uploaded_file is not None:
                 'Giá trị': [
                     df_processed.to_markdown(index=False),
                     f"{df_processed[df_processed['Chỉ tiêu'].str.contains('TÀI SẢN NGẮN HẠN', case=False, na=False)]['Tốc độ tăng trưởng (%)'].iloc[0]:.2f}%" if not df_processed[df_processed['Chỉ tiêu'].str.contains('TÀI SẢN NGẮN HẠN', case=False, na=False)].empty else "N/A", 
-                    f"{thanh_toan_hien_hanh_N:.2f}" if isinstance(thanh_toan_hien_hanh_N, float) and thanh_toan_hien_hanh_N != float('inf') else thanh_toan_hien_hanh_N, 
-                    f"{thanh_toan_hien_hanh_N_1:.2f}" if isinstance(thanh_toan_hien_hanh_N_1, float) and thanh_toan_hien_hanh_N_1 != float('inf') else thanh_toan_hien_hanh_N_1
+                    f"{thanh_toan_hien_hanh_N_1:.2f}" if isinstance(thanh_toan_hien_hanh_N_1, float) and thanh_toan_hien_hanh_N_1 != float('inf') else thanh_toan_hien_hanh_N_1, 
+                    f"{thanh_toan_hien_hanh_N:.2f}" if isinstance(thanh_toan_hien_hanh_N, float) and thanh_toan_hien_hanh_N != float('inf') else thanh_toan_hien_hanh_N
                 ]
             }).to_markdown(index=False) 
 
@@ -195,7 +197,7 @@ else:
 if uploaded_file is not None and df_processed is not None:
     st.markdown("---")
     st.subheader("6. Chat với AI Phân tích 💬")
-    st.caption("Bạn có thể hỏi thêm về dữ liệu tài chính hoặc nhận xét đã tạo.")
+    st.caption("Bạn có thể hỏi thêm về dữ liệu tài chính hoặc nhận xét đã tạo. Lịch sử chat được lưu giữ.")
     
     api_key = st.secrets.get("GEMINI_API_KEY")
 
@@ -212,7 +214,7 @@ if uploaded_file is not None and df_processed is not None:
             Bạn là một chuyên gia phân tích tài chính có khả năng trò chuyện. 
             Mọi câu trả lời của bạn phải dựa trên **bảng phân tích tài chính** sau. 
             Hãy trả lời bằng Tiếng Việt.
-
+            
             DỮ LIỆU CƠ SỞ ĐỂ PHÂN TÍCH:
             {data_for_ai}
             """
@@ -227,14 +229,17 @@ if uploaded_file is not None and df_processed is not None:
                 )
             
             # 1. Hiển thị lịch sử chat
+            # Lặp qua lịch sử (history) của session, bỏ qua message đầu tiên (system instruction) nếu có.
             for message in st.session_state.chat_session.get_history():
-                # Streamlit Chat message widget tự động căn chỉnh role
-                role = "user" if message.role == "user" else "assistant"
-                with st.chat_message(role):
-                    st.markdown(message.parts[0].text)
+                 if message.role != "system": # Bỏ qua system instruction
+                    # Streamlit Chat message widget tự động căn chỉnh role
+                    role = "user" if message.role == "user" else "assistant"
+                    with st.chat_message(role):
+                        st.markdown(message.parts[0].text)
             
             # 2. Xử lý Input từ người dùng
             if user_prompt := st.chat_input("Hỏi AI: 'Tài sản dài hạn có tăng không?'"):
+                
                 # Hiển thị tin nhắn của người dùng
                 with st.chat_message("user"):
                     st.markdown(user_prompt)
@@ -256,21 +261,3 @@ if uploaded_file is not None and df_processed is not None:
 
         except Exception as e:
             st.error(f"Lỗi khởi tạo Chatbot: {e}")
-Chi tiết Các Thay Đổi Quan Trọng
-1. Sử dụng st.session_state cho Lịch sử Chat
-Để duy trì cuộc hội thoại (lịch sử hỏi đáp) giữa các lần tương tác của người dùng, chúng ta cần sử dụng st.session_state của Streamlit:
-
-Khởi tạo Session:
-
-Python
-
-if "chat_session" not in st.session_state:
-    st.session_state.chat_session = client.chats.create(...)
-Đoạn này chỉ tạo một phiên chat mới khi ứng dụng được khởi động lần đầu hoặc sau khi tải lại trang, giúp giữ nguyên lịch sử.
-
-Lịch sử Chat:
-
-Python
-
-for message in st.session_state.chat_session.get_history():
-    # ... hiển thị bằng st.chat_message
