@@ -1,5 +1,3 @@
-# python.py
-
 import streamlit as st
 import pandas as pd
 from google import genai
@@ -181,7 +179,7 @@ if uploaded_file is not None:
                         st.markdown("**Kết quả Phân tích từ Gemini AI:**")
                         st.info(ai_result)
                 else:
-                     st.error("Lỗi: Không tìm thấy Khóa API. Vui lòng cấu hình Khóa 'GEMINI_API_KEY' trong Streamlit Secrets.")
+                    st.error("Lỗi: Không tìm thấy Khóa API. Vui lòng cấu hình Khóa 'GEMINI_API_KEY' trong Streamlit Secrets.")
 
     except ValueError as ve:
         st.error(f"Lỗi cấu trúc dữ liệu: {ve}")
@@ -192,7 +190,7 @@ else:
     st.info("Vui lòng tải lên file Excel để bắt đầu phân tích.")
 
 # ====================================================================
-# --- CHỨC NĂNG 6: KHUNG CHAT HỎI ĐÁP VỚI GEMINI ---
+# --- CHỨC NĂNG 6: KHUNG CHAT HỎI ĐÁP VỚI GEMINI (ĐÃ THÊM) ---
 # ====================================================================
 if uploaded_file is not None and df_processed is not None:
     st.markdown("---")
@@ -221,7 +219,7 @@ if uploaded_file is not None and df_processed is not None:
 
             # Khởi tạo chat session nếu chưa có (dùng st.session_state để lưu lịch sử)
             if "chat_session" not in st.session_state:
-                 st.session_state.chat_session = client.chats.create(
+                st.session_state.chat_session = client.chats.create(
                     model=model_name,
                     config=genai.types.GenerateContentConfig(
                         system_instruction=system_instruction
@@ -230,6 +228,7 @@ if uploaded_file is not None and df_processed is not None:
             
             # 1. Hiển thị lịch sử chat
             for message in st.session_state.chat_session.get_history():
+                # Streamlit Chat message widget tự động căn chỉnh role
                 role = "user" if message.role == "user" else "assistant"
                 with st.chat_message(role):
                     st.markdown(message.parts[0].text)
@@ -244,6 +243,7 @@ if uploaded_file is not None and df_processed is not None:
                 with st.spinner("Đang xử lý..."):
                     try:
                         # Gửi tin nhắn và nhận streaming response
+                        # Sử dụng stream=True để Streamlit hiển thị câu trả lời dần dần
                         response = st.session_state.chat_session.send_message(user_prompt, stream=True)
 
                         # Hiển thị phản hồi từ Gemini (streaming)
@@ -256,3 +256,21 @@ if uploaded_file is not None and df_processed is not None:
 
         except Exception as e:
             st.error(f"Lỗi khởi tạo Chatbot: {e}")
+Chi tiết Các Thay Đổi Quan Trọng
+1. Sử dụng st.session_state cho Lịch sử Chat
+Để duy trì cuộc hội thoại (lịch sử hỏi đáp) giữa các lần tương tác của người dùng, chúng ta cần sử dụng st.session_state của Streamlit:
+
+Khởi tạo Session:
+
+Python
+
+if "chat_session" not in st.session_state:
+    st.session_state.chat_session = client.chats.create(...)
+Đoạn này chỉ tạo một phiên chat mới khi ứng dụng được khởi động lần đầu hoặc sau khi tải lại trang, giúp giữ nguyên lịch sử.
+
+Lịch sử Chat:
+
+Python
+
+for message in st.session_state.chat_session.get_history():
+    # ... hiển thị bằng st.chat_message
